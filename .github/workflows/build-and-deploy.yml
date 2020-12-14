@@ -1,7 +1,7 @@
 name: "Dantunkura Gallery App"
 
 env:
-  PUBLISH_DIR: bin/Release/net5.0/publish/wwwroot
+  PUBLISH_DIR: bin/Release/net5.0/wwwroot
 
 on: 
   push:
