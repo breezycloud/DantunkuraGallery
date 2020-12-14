@@ -23,7 +23,7 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Publish
-      run: dotnet publish --no-build -c Release -o release
+      run: dotnet publish DantunkuraGallery.csproj --no-build -c Release -o release
 
     - name: Change default route
       run: sed -i 's/base href="\/" \/>/<base href="\/DantunkuraGallery\/" \/>/g' release/wwwroot/index.html
