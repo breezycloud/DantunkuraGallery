@@ -9,16 +9,15 @@ jobs:
     name: Build and Deploy
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2    
+    - name: Setup .NET Core SDK 
+      uses: actions/setup-dotnet@v1.7.2
+      with:
+        dotnet-version: 5.0.100
 
     - name: Restore
-      run: dotnet restore
-    
-    - name: Setup .NET 5 SDK 
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.0
-    
+      run: dotnet restore  
+
     - name: Build
       run: dotnet build --no-restore
 
