@@ -22,7 +22,7 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Publish
-      run: dotnet publish DantunkuraGallery.csproj --no-build -c Release -o release
+      run: dotnet publish --no-build -c Release -o release
            
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.7.1
