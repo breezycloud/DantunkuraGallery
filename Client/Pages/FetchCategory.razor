@@ -1,0 +1,145 @@
+﻿@page "/fetchCategory"
+@using DantunkuraGallery.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+
+<h2><em>Categories</em></h2>
+
+@if (categories == null)
+{
+    <div class="progress" style="position: relative; height: 3px;">
+        <div class="progress-bar progress-bar-striped indeterminate"></div>
+    </div>
+}
+else
+{
+    <table id="categoriesTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Decription</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in categories)
+            {
+                <tr>
+                    <td>@item.CategoryName</td>
+                    <td>@item.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="modal @ModalClass" tabindex="-1" role="dialog" style="display:@ModalDisplay">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Category</h5>
+                <button type="button" class="close" data-dismiss="modal" @onclick="() => Close()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@category" OnValidSubmit="@AddEdit">
+                    <DataAnnotationsValidator />
+                    <form>
+                        @if (isSuccess)
+                        {
+                            <div class="alert alert-info" role="alert">
+                                @alertMsg
+                            </div>
+                        }
+                        <div class="form-group">
+                            <label for="catName">Name</label>
+                            <input type="text" id="catName" @bind-value="category.CategoryName" class="form-control" placeholder="Category Name" required />
+                            <ValidationMessage For="@(() => category.CategoryName)" />
+                        </div>                                                
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" @bind-value="category.Description" class="form-control" placeholder="Category Description" />
+                        </div>
+                    </form>
+                </EditForm>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="@AddEdit">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => Close()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a id="plusButton" class="float" @onclick="() => ShowModal()">
+    <i class="oi oi-plus my-float"></i>
+</a>
+
+@code {
+
+    public string ModalDisplay = "none;";
+    public string ModalClass = "";
+    public string alertMsg { get; set; }
+    public string ModalTitle;
+    public bool ShowBackdrop = false;
+    public bool isSuccess { get; set; } = false;
+    private Category[] categories;
+    private Category category = new Category();
+    private int i;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await Http.GetFromJsonAsync<Category[]>("api/Categories");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<object>("TestDataTablesAdd", "#categoriesTable");
+    }
+
+    private async Task AddEdit()
+    {
+        var newCategory = GetCategory(category);
+        await Http.PostAsJsonAsync("api/Categories", newCategory);
+        alertMsg = "Category Added Successfully";
+        isSuccess = true;
+    }
+
+    private Category GetCategory(Category newCategory)
+    {
+        Category result = new Category
+        {
+            CategoryNo = Guid.NewGuid(),
+            CategoryName = newCategory.CategoryName,
+            Description = newCategory.Description
+        };
+
+        return result;
+    }
+
+    private void ShowModal()
+    {
+        ModalDisplay = "block;";
+        ModalClass = "Show";
+        ShowBackdrop = true;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        ModalDisplay = "none";
+        ModalClass = "";
+        ShowBackdrop = false;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    void IDisposable.Dispose()
+    {
+        JSRuntime.InvokeAsync<object>("TestDataTablesRemove", "#categoriesTable");
+    }
+
+}

@@ -1,0 +1,233 @@
+﻿@page "/fetchproduct"
+@using DantunkuraGallery.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<h2><em>Products</em></h2>
+@if (products == null)
+{
+    <div class="progress" style="position: relative; height: 3px;">
+        <div class="progress-bar progress-bar-striped indeterminate"></div>
+    </div>
+}
+else
+{
+    <table id="productsTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Model No.</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Cost</th>
+                <th>Actions</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.ModelNo</td>
+                    <td>@product.ProductCode</td>
+                    <td>@product.StocksOnHand</td>
+                    <td>@product.FormattedPrice</td>
+                    <td>
+                        <a style="text-underline-position:below; cursor:pointer; color:blue; font-weight:bold;"
+                           @onclick="(() => EditProduct(product))">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="modal @ModalClass" tabindex="-1" role="dialog" style="display:@ModalDisplay">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@ModalTitle</h5>
+                <button type="button" class="close" data-dismiss="modal" @onclick="() => Close()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@product" OnValidSubmit="@AddEdit">
+                    <DataAnnotationsValidator />
+                    <form>
+                        @if (isSuccess)
+                        {
+                            <div class="alert alert-info" role="alert">
+                                @alertMsg
+                            </div>
+                        }
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="modelNo">Model No.</label>
+                                <input type="text" id="modelNo" @bind-value="product.ModelNo" class="form-control" placeholder="Model Number" required />
+                                <ValidationMessage For="@(() => product.ModelNo)" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="productNo">Product Name</label>
+                                <input type="text" id="productNo" @bind-value="product.ProductCode" class="form-control" placeholder="Product Name" required />
+                                <ValidationMessage For="@(() => product.ProductCode)" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" @bind-value="product.Description" class="form-control" placeholder="Description" />
+                        </div>
+                        <div class="form-group">
+                            <label id="catDropDown">Category</label>
+                            <select id="catDropDown" class="form-control" @bind="SelectedCategory">
+                                @foreach (var item in categories)
+                                {
+                                    <option value="@item.CategoryNo">@item.CategoryName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="qty">Quantity</label>
+                                <input type="text" id="qty" @bind-value="product.StocksOnHand" class="form-control" placeholder="Quantity" required />
+                                <ValidationMessage For="@(() => product.StocksOnHand)" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="unitPrice">Unit Price</label>
+                                <input type="text" id="unitPrice" @bind-value="product.UnitPrice" class="form-control" placeholder="Unit Price" required />
+                                <ValidationMessage For="@(() => product.UnitPrice)" />
+                            </div>
+                        </div>
+
+                    </form>
+                </EditForm>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="@AddEdit">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => Close()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a id="plusButton" class="float" @onclick="() => EditProduct(product)">
+    <i class="oi oi-plus my-float"></i>
+</a>
+
+
+@code {
+
+    private Products[] products;
+    private Products product = new Products();
+    private IList<Category> categories = new List<Category>();
+    public string ModalDisplay = "none;";
+    public string ModalClass = "";
+    public string alertMsg { get; set; }
+    public string ModalTitle;
+    public bool ShowBackdrop = false;
+    public bool isSuccess { get; set; } = false;
+    public bool isAdd { get; set; }
+
+    private Guid _selectedCategory;
+
+    public Guid SelectedCategory
+    {
+        get { return _selectedCategory; }
+        set { _selectedCategory = value; }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await Http.GetFromJsonAsync<Products[]>("api/Products");
+        categories = await Http.GetFromJsonAsync<List<Category>>("api/Categories");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<object>("TestDataTablesAdd", "#productsTable");
+    }
+
+    private async Task AddEdit()
+    {
+        string updateUrl = string.Empty;
+        if (isAdd)
+        {
+            var newProduct = NewProduct(product);
+            var newStock = NewStock(newProduct);
+            await Http.PostAsJsonAsync("api/Products", newProduct);
+            await Http.PostAsJsonAsync("api/StockIns", newStock);
+            alertMsg = "Product added successfully";
+        }
+        else
+        {
+            updateUrl = string.Format("api/Products/{0}", product.ProductNo);
+            await Http.PutAsJsonAsync(updateUrl, product);
+            alertMsg = "Product updated successfully";
+        }
+        isSuccess = true;
+
+    }
+
+    private Products NewProduct(Products product)
+    {
+        Products newProduct = new Products
+        {
+            ProductNo = Guid.NewGuid(),
+            ModelNo = product.ModelNo,
+            ProductCode = product.ProductCode,
+            Description = product.Description,
+            CategoryNo = SelectedCategory,
+            StocksOnHand = product.StocksOnHand,
+            UnitPrice = product.UnitPrice
+        };
+        return newProduct;
+    }
+
+
+    private StockIn NewStock(Products product)
+    {
+        float quantity = product.StocksOnHand ?? 0;
+        StockIn newStock = new StockIn
+        {
+            ProductNo = product.ProductNo,
+            Quantity = quantity,
+            DateIn = DateTime.UtcNow
+        };
+
+        return newStock;
+    }
+    private void EditProduct(Products products)
+    {
+        ModalDisplay = "block;";
+        ModalClass = "Show";
+        product = products;
+        if (string.IsNullOrEmpty(product.ModelNo))
+        {
+            ModalTitle = "New Product";
+            product = new Products();
+            isAdd = true;
+        }
+        else
+        {
+            ModalTitle = "Update Product";
+            isAdd = false;
+        }
+        ShowBackdrop = true;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        ModalDisplay = "none";
+        ModalClass = "";
+        ShowBackdrop = false;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    void IDisposable.Dispose()
+    {
+        JSRuntime.InvokeAsync<object>("TestDataTablesRemove", "#productsTable");
+    }
+}

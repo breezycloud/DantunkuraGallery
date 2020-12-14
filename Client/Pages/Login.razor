@@ -1,0 +1,57 @@
+﻿@layout LoginLayout
+@page "/"
+@using DantunkuraGallery.Shared
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<EditForm Model="@staff" OnValidSubmit="@ValidateUser">
+    <div class="form-signin">
+        <div class="text-center">
+            <svg width="5em" height="5em" viewBox="0 0 16 16" class="bi bi-person-circle" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.468 12.37C12.758 11.226 11.195 10 8 10s-4.757 1.225-5.468 2.37A6.987 6.987 0 0 0 8 15a6.987 6.987 0 0 0 5.468-2.63z" />
+                <path fill-rule="evenodd" d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z" />
+            </svg>
+        </div>
+        <br />
+        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+        <label for="inputEmail" class="sr-only">Username</label>
+        <input type="text" id="inputEmail" @bind-value="@staff.Username" class="form-control" placeholder="Username" required autofocus>
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" id="inputPassword" @bind-value="@staff.Password" class="form-control" placeholder="Password" required>
+        <br />
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+    </div>
+</EditForm>
+
+@if (loginFailed)
+{
+    <div class="alert alert-danger" role="alert">
+        Invalid username or password
+    </div>
+}
+
+
+@code {
+    private Staff staff;
+    public bool loginFailed { get; set; } = false;
+    protected override void OnInitialized()
+    {
+        staff = new Staff();
+    }
+
+    private void ValidateUser()
+    {
+        if (staff.Username == "Mukhtar" && staff.Password == "Fatimah12")
+        {
+            NavigationManager.NavigateTo("/index");
+            loginFailed = false;
+        }
+        else
+        {
+            loginFailed = true;
+        }
+    }
+
+}

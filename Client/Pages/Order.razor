@@ -1,0 +1,65 @@
+﻿@page "/order"
+@using DantunkuraGallery.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+
+<h2><em>Orders</em></h2>
+
+@if (transactions == null)
+{
+<div class="progress" style="position: relative; height: 3px;">
+    <div class="progress-bar progress-bar-striped indeterminate"></div>
+</div>
+}
+else
+{
+    <table id="transactionsTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Receipt #</th>
+                <th>Date</th>
+                <th>Discount</th>
+                <th>Sub Total</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in transactions)
+            {
+                <tr>
+                    <td>@transaction.InvoiceNo</td>
+                    <td>@transaction.Tdate.Value.ToShortDateString()</td>
+                    <td>@transaction.FormattedDiscount</td>
+                    <td>@transaction.FormattedSubTotal</td>
+                    <td>@transaction.FormattedTotalAmount</td>
+                    <td></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a id="plusButton" class="float">
+    <i class="oi oi-plus my-float"></i>
+</a>
+
+@code {
+    private Transactions[] transactions;
+    protected override async Task OnInitializedAsync()
+    {
+        transactions = await Http.GetFromJsonAsync<Transactions[]>("api/Transactions");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<object>("TestDataTablesAdd", "#transactionsTable");
+    }
+
+    void IDisposable.Dispose()
+    {
+        JSRuntime.InvokeAsync<object>("TestDataTablesRemove", "#transactionsTable");
+    }
+
+}
