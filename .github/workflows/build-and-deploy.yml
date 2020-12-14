@@ -27,10 +27,7 @@ jobs:
 
     - name: Change default route
       run: sed -i 's/base href="\/" \/>/<base href="\/DantunkuraGallery\/" \/>/g' release/wwwroot/index.html
-
-    - name: Add .nojekyll file
-      run: touch release/wwwroot/.nojekyll
-    
+        
    - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.7.1
       with:
