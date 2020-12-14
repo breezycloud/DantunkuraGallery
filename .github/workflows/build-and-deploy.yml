@@ -27,8 +27,8 @@ jobs:
     - name: Publish
       run: dotnet publish --no-build -c Release -o release
 
-     - name: Rewrite base href
-      uses: DantunkuraGallery/ghaction-rewrite-base-href@v1
+    - name: Rewrite base href
+      uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
       with:
         html_path: ${{ env.PUBLISH_DIR }}/index.html
         base_href: /DantunkuraGallery/
