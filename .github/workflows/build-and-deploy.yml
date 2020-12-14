@@ -1,5 +1,8 @@
 name: "Dantunkura Gallery App"
 
+env:
+  PUBLISH_DIR: bin/Release/netstandard2.1/publish/wwwroot
+
 on: 
   push:
     branches: [ master ]
@@ -24,20 +27,19 @@ jobs:
     - name: Publish
       run: dotnet publish --no-build -c Release -o release
 
-    - name: Change base-tag in index.html from / to DantunkuraGallery
-      run: sed -i 's/<base href="\/" \/>/<base href="\/DantunkuraGallery\/" \/>/g' release/wwwroot/index.html
-        
-    - name: copy index.html to 404.html
-      run: cp release/wwwroot/index.html release/wwwroot/404.html
-
-    - name: Add .nojekyll file
-      run: touch release/wwwroot/.nojekyll
-           
-    - name: Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@3.7.1
+     - name: Rewrite base href
+      uses: DantunkuraGallery/ghaction-rewrite-base-href@v1
       with:
+        html_path: ${{ env.PUBLISH_DIR }}/index.html
+        base_href: /DantunkuraGallery/
+           
+    - name: GitHub Pages
+      if: success()
+      uses: crazy-max/ghaction-github-pages@v1.5.1
+      with:
+        target_branch: gh-pages
+        build_dir: ${{ env.PUBLISH_DIR }}
+      env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: release/wwwroot
 
 
